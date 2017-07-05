@@ -25,14 +25,14 @@ object TypeMapper {
     def toBase(custom: CustomType): BaseType = customToBase(custom)
   }
 
-  implicit val DoubleValueTypeMapper = TypeMapper[DoubleValue, Double](_.value)(com.google.protobuf.wrappers.DoubleValue.apply)
-  implicit val FloatValueTypeMapper = TypeMapper[FloatValue, Float](_.value)(com.google.protobuf.wrappers.FloatValue.apply)
-  implicit val Int64ValueTypeMapper = TypeMapper[Int64Value, Long](_.value)(com.google.protobuf.wrappers.Int64Value.apply)
-  implicit val UInt64ValueTypeMapper = TypeMapper[UInt64Value, Long](_.value)(com.google.protobuf.wrappers.UInt64Value.apply)
-  implicit val Int32ValueTypeMapper = TypeMapper[Int32Value, Int](_.value)(com.google.protobuf.wrappers.Int32Value.apply)
-  implicit val UInt32ValueTypeMapper = TypeMapper[UInt32Value, Int](_.value)(com.google.protobuf.wrappers.UInt32Value.apply)
-  implicit val BoolValueTypeMapper = TypeMapper[BoolValue, Boolean](_.value)(com.google.protobuf.wrappers.BoolValue.apply)
-  implicit val StringValueTypeMapper = TypeMapper[StringValue, String](_.value)(com.google.protobuf.wrappers.StringValue.apply)
-  implicit val BytesValueTypeMapper = TypeMapper[BytesValue, ByteString](_.value)(com.google.protobuf.wrappers.BytesValue.apply)
+  implicit val DoubleValueTypeMapper: TypeMapper[DoubleValue, Double] = TypeMapper[DoubleValue, Double](_.value)(DoubleValue.apply)
+  implicit val FloatValueTypeMapper: TypeMapper[FloatValue, Float] = TypeMapper[FloatValue, Float](_.value)(FloatValue.apply)
+  implicit val Int64ValueTypeMapper: TypeMapper[Int64Value, Long] = TypeMapper[Int64Value, Long](_.value)(Int64Value.apply)
+  implicit val UInt64ValueTypeMapper: TypeMapper[UInt64Value, Long] = TypeMapper[UInt64Value, Long](_.value)(UInt64Value.apply)
+  implicit val Int32ValueTypeMapper: TypeMapper[Int32Value, Int] = TypeMapper[Int32Value, Int](_.value)(Int32Value.apply)
+  implicit val UInt32ValueTypeMapper: TypeMapper[UInt32Value, Int] = TypeMapper[UInt32Value, Int](_.value)(UInt32Value.apply)
+  implicit val BoolValueTypeMapper: TypeMapper[BoolValue, Boolean] = TypeMapper[BoolValue, Boolean](_.value)(BoolValue.apply)
+  implicit val StringValueTypeMapper: TypeMapper[StringValue, String] = TypeMapper[StringValue, String](_.value)(StringValue.apply)
+  implicit val BytesValueTypeMapper: TypeMapper[BytesValue, com.google.protobuf.ByteString] = TypeMapper[BytesValue, ByteString](_.value)(BytesValue.apply)
 }
 

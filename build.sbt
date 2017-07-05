@@ -11,6 +11,15 @@ scalacOptions in ThisBuild ++= {
   }
 }
 
+lazy val dottySettings = List(
+  libraryDependencies := libraryDependencies.value.map(_.withDottyCompat()),
+  scalacOptions := {
+    if (isDotty.value) List("-language:Scala2", "-verbose")
+    else scalacOptions.value
+  }
+)
+
+
 javacOptions in ThisBuild ++= {
   CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, v)) if v <= 11 => List("-target", "7", "-source", "7")
@@ -82,6 +91,7 @@ lazy val runtime = crossProject.crossType(CrossType.Full).in(file("scalapb-runti
     },
     unmanagedResourceDirectories in Compile += baseDirectory.value / "../../third_party"
   )
+  .settings(dottySettings)
 
 lazy val runtimeJVM = runtime.jvm
 lazy val runtimeJS = runtime.js
@@ -98,6 +108,7 @@ lazy val grpcRuntime = project.in(file("scalapb-runtime-grpc"))
       "org.mockito" % "mockito-core" % "2.7.22" % "test"
     )
   )
+  .settings(dottySettings)
 
 lazy val compilerPlugin = project.in(file("compiler-plugin"))
   .settings(
@@ -122,7 +133,9 @@ lazy val compilerPlugin = project.in(file("compiler-plugin"))
     libraryDependencies ++= Seq(
       "com.trueaccord.scalapb" %% "protoc-bridge" % "0.2.6",
       "org.scalatest" %% "scalatest" % "3.0.1" % "test"
-      ))
+      )
+  )
+  .settings(dottySettings)
 
 // Until https://github.com/scalapb/ScalaPB/issues/150 is fixed, we are
 // publishing compiler-plugin bundled with protoc-bridge, and linked against
@@ -163,6 +176,7 @@ lazy val compilerPluginShaded = project.in(file("compiler-plugin-shaded"))
 	  }).transform(node).head
 	}
   )
+  .settings(dottySettings)
 
 lazy val scalapbc = project.in(file("scalapbc"))
   .dependsOn(compilerPlugin)

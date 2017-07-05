@@ -14,7 +14,7 @@ scalacOptions in ThisBuild ++= {
 lazy val dottySettings = List(
   libraryDependencies := libraryDependencies.value.map(_.withDottyCompat()),
   scalacOptions := {
-    if (isDotty.value) List("-language:Scala2", "-verbose")
+    if (isDotty.value) List("-language:Scala2")
     else scalacOptions.value
   }
 )

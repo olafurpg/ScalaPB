@@ -1,8 +1,8 @@
 package com.trueaccord.scalapb.grpc
 
 import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture}
-import io.grpc.{Status, StatusException}
-import io.grpc.stub.StreamObserver
+import _root_.io.grpc.{Status, StatusException}
+import _root_.io.grpc.stub.StreamObserver
 
 import scala.concurrent.{Future, Promise}
 import scala.util.Try

@@ -2,7 +2,7 @@ package com.trueaccord.scalapb.grpc
 
 import com.google.protobuf.InvalidProtocolBufferException
 import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
-import io.grpc.Metadata
+import _root_.io.grpc.Metadata
 
 object ProtoUtils {
   class ScalaPbMetadataMarshaller[T <: GeneratedMessage with Message[T]](companion: GeneratedMessageCompanion[T]) extends Metadata.BinaryMarshaller[T] {

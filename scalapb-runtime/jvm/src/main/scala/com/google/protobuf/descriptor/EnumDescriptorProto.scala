@@ -7,7 +7,7 @@ package com.google.protobuf.descriptor
 
 import scala.collection.JavaConverters._
 
-/** Describes an enum type.
+/** Describes an `enum` type.
   */
 @SerialVersionUID(0L)
 final case class EnumDescriptorProto(

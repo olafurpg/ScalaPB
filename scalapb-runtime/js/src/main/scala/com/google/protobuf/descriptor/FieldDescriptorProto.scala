@@ -13,7 +13,7 @@ package com.google.protobuf.descriptor
   *   If type_name is set, this need not be set.  If both this and type_name
   *   are set, this must be one of TYPE_ENUM, TYPE_MESSAGE or TYPE_GROUP.
   * @param typeName
-  *   For message and enum types, this is the name of the type.  If the name
+  *   For message and `enum` types, this is the name of the type.  If the name
   *   starts with a '.', it is fully-qualified.  Otherwise, C++-like scoping
   *   rules are used to find the type (i.e. first the nested types within this
   *   message are searched, then within the parent, on up to the root

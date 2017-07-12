@@ -7,7 +7,7 @@ package com.google.protobuf.descriptor
 
 
 
-/** Describes a value within an enum.
+/** Describes a value within an `enum`.
   */
 @SerialVersionUID(0L)
 final case class EnumValueDescriptorProto(

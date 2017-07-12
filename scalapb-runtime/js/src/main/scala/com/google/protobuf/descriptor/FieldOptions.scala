@@ -26,7 +26,7 @@ package com.google.protobuf.descriptor
   *   happen when a large value is converted to a floating point JavaScript
   *   numbers.  Specifying JS_NUMBER for the jstype causes the generated
   *   JavaScript code to use the JavaScript "number" type instead of strings.
-  *   This option is an enum to permit additional types to be added,
+  *   This option is an `enum` to permit additional types to be added,
   *   e.g. goog.math.Integer.
   * @param lazy
   *   Should this field be parsed lazily?  Lazy applies only to message-type

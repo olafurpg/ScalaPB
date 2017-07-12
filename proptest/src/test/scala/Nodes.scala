@@ -184,7 +184,7 @@ object Nodes {
         .add(fileReferences(rootNode).collect({
         case f if f != baseFileName => s"""import "${f}.proto";"""
       }).toSeq: _*)
-        .print(enums)((enum, p) => p.print(enum))
+        .print(enums)((`enum`, p) => p.print(`enum`))
         .print(messages)((message, p) => p.print(rootNode, this, message))
         .print(services)((service, p) => p.print(service))
 
@@ -253,7 +253,7 @@ object Nodes {
       printer
         .add(s"message $name {  // message $id")
         .indent
-        .print(enums)((enum, p) => p.print(enum))
+        .print(enums)((`enum`, p) => p.print(`enum`))
         .print(messages)((message, p) => p.print(rootNode, fileNode, message))
         .print(makeList(fields)) {
         case (printer, OneofOpener(name)) =>
@@ -296,7 +296,7 @@ object Nodes {
 
   case class EnumNode(id: Int, name: String, values: Seq[(String, Int)], parentMessageId: Option[Int], fileId: Int) {
     def print(printer: compiler.FunctionalPrinter): compiler.FunctionalPrinter = {
-      printer.add(s"enum $name {  // enum $id")
+      printer.add(s"`enum` $name {  // `enum` $id")
         .indent
         .add(values.map { case (s, v) => s"$s = $v;"}: _*)
         .outdent

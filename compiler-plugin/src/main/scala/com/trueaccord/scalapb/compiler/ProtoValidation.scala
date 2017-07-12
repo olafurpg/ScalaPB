@@ -19,7 +19,7 @@ class ProtoValidation(val params: GeneratorParams) extends DescriptorPimps {
   def validateEnum(e: EnumDescriptor): Unit = {
     if (e.getValues.asScala.exists(_.getName.toUpperCase == "UNRECOGNIZED")) {
       throw new GeneratorException(
-        s"The enum value 'UNRECOGNIZED' in ${e.getName} is not allowed due to conflict with the catch-all " +
+        s"The `enum` value 'UNRECOGNIZED' in ${e.getName} is not allowed due to conflict with the catch-all " +
           "Unrecognized(v: Int) value.")
     }
   }

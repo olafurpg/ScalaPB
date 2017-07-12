@@ -189,7 +189,7 @@ object FieldDescriptor {
           case Some(e: EnumDescriptor) =>
             ScalaType.Enum(e)
           case None =>
-            throw new DescriptorValidationException(m, s"Could not find enum ${field.getTypeName} for field ${field.getName}")
+            throw new DescriptorValidationException(m, s"Could not find `enum` ${field.getTypeName} for field ${field.getName}")
           case Some(_) =>
             throw new DescriptorValidationException(m, s"Invalid type ${field.getTypeName} for field ${field.getName}")
         }

@@ -20,7 +20,7 @@ package com.google.protobuf.descriptor
   *   explicitly choose the class name).
   * @param javaMultipleFiles
   *   If set true, then the Java code generator will generate a separate .java
-  *   file for each top-level message, enum, and service defined in the .proto
+  *   file for each top-level message, `enum`, and service defined in the .proto
   *   file.  Thus, these types will *not* be nested inside the outer class
   *   named by java_outer_classname.  However, the outer class will still be
   *   generated to contain the file's getDescriptor() method as well as any

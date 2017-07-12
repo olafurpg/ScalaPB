@@ -188,7 +188,7 @@ class FileDescriptorSpec extends FlatSpec with MustMatchers with OptionValues {
     }.getMessage must be ("mypkg.Msg1: Invalid type TheEnum for field ff")
   }
 
-  "buildFrom" should "fail when enum ref type is not an enum" in {
+  "buildFrom" should "fail when `enum` ref type is not an `enum`" in {
     val fdp = FileDescriptorProto.fromAscii(
       """package: "mypkg"
         |message_type {

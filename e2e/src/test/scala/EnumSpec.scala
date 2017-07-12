@@ -1,4 +1,4 @@
-import com.trueaccord.proto.e2e.enum._
+import com.trueaccord.proto.e2e.`enum`._
 import com.trueaccord.proto.e2e.enum3._
 import com.trueaccord.scalapb.GeneratedEnumCompanion
 import org.scalatest._
@@ -90,7 +90,7 @@ class EnumSpec extends FlatSpec with MustMatchers with OptionValues {
         innerEnum = Some(EnumTest.InnerEnum.OtherCase)))
   }
 
-  "missing enum values in proto3" should "be preserved in parsing" in {
+  "missing `enum` values in proto3" should "be preserved in parsing" in {
     val like = EnumTestLike(color = 18)  // same field number as `color` in EnumTest3.
     val e3 = EnumTest3.parseFrom(like.toByteArray)
     e3.color must be (Color3.Unrecognized(18))
@@ -98,12 +98,12 @@ class EnumSpec extends FlatSpec with MustMatchers with OptionValues {
     e3.toByteArray must be (like.toByteArray)
   }
 
-  "missing enum values in proto3 seq" should "be preserved in parsing" in {
+  "missing `enum` values in proto3 seq" should "be preserved in parsing" in {
     val e3 = EnumTest3(colorVector = Seq(Color3.C3_RED, Color3.Unrecognized(15), Color3.C3_BLUE))
     EnumTest3.parseFrom(e3.toByteArray) must be (e3)
   }
 
-  "missing enum values in proto2" should "be preserved in parsing" in {
+  "missing `enum` values in proto2" should "be preserved in parsing" in {
     val like = EnumTestLike(color = 18)  // same field number as `color` in EnumTest3.
     val e3 = EnumTest.parseFrom(like.toByteArray)
     e3.getColor must be (Color.Unrecognized(18))

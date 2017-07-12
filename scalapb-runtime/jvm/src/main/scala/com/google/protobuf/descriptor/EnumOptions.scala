@@ -11,9 +11,9 @@ import scala.collection.JavaConverters._
   *   Set this option to true to allow mapping different tag names to the same
   *   value.
   * @param deprecated
-  *   Is this enum deprecated?
+  *   Is this `enum` deprecated?
   *   Depending on the target platform, this can emit Deprecated annotations
-  *   for the enum, or it will be completely ignored; in the very least, this
+  *   for the `enum`, or it will be completely ignored; in the very least, this
   *   is a formalization for deprecating enums.
   * @param uninterpretedOption
   *   The parser stores options it doesn't recognize here. See above.

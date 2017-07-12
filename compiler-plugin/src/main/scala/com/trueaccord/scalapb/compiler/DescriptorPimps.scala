@@ -372,10 +372,10 @@ trait DescriptorPimps {
     }
   }
 
-  implicit class EnumDescriptorPimp(val enum: EnumDescriptor) {
-    def parentMessage: Option[Descriptor] = Option(enum.getContainingType)
+  implicit class EnumDescriptorPimp(val `enum`: EnumDescriptor) {
+    def parentMessage: Option[Descriptor] = Option(`enum`.getContainingType)
 
-    def name: String = enum.getName match {
+    def name: String = `enum`.getName match {
       case "Option" => "OptionEnum"
       case n => n
     }
@@ -384,25 +384,25 @@ trait DescriptorPimps {
 
     lazy val scalaTypeName: String = parentMessage match {
       case Some(p) => p.scalaTypeName + "." + nameSymbol
-      case None => (enum.getFile.scalaPackagePartsAsSymbols :+ nameSymbol).mkString(".")
+      case None => (`enum`.getFile.scalaPackagePartsAsSymbols :+ nameSymbol).mkString(".")
     }
 
-    def isTopLevel = enum.getContainingType == null
+    def isTopLevel = `enum`.getContainingType == null
 
-    def javaTypeName = enum.getFile.fullJavaName(enum.getFullName)
+    def javaTypeName = `enum`.getFile.fullJavaName(`enum`.getFullName)
 
-    def javaConversions = enum.getFile.javaConversions
+    def javaConversions = `enum`.getFile.javaConversions
 
-    def valuesWithNoDuplicates = enum.getValues.asScala.groupBy(_.getNumber)
+    def valuesWithNoDuplicates = `enum`.getValues.asScala.groupBy(_.getNumber)
       .mapValues(_.head).values.toVector.sortBy(_.getNumber)
 
-    def javaDescriptorSource: String = if (enum.isTopLevel)
-      s"${enum.getFile.fileDescriptorObjectName}.javaDescriptor.getEnumTypes.get(${enum.getIndex})"
-      else s"${enum.getContainingType.scalaTypeName}.javaDescriptor.getEnumTypes.get(${enum.getIndex})"
+    def javaDescriptorSource: String = if (`enum`.isTopLevel)
+      s"${`enum`.getFile.fileDescriptorObjectName}.javaDescriptor.getEnumTypes.get(${`enum`.getIndex})"
+      else s"${`enum`.getContainingType.scalaTypeName}.javaDescriptor.getEnumTypes.get(${`enum`.getIndex})"
 
-    def scalaDescriptorSource: String = if (enum.isTopLevel)
-      s"${enum.getFile.fileDescriptorObjectName}.scalaDescriptor.enums(${enum.getIndex})"
-    else s"${enum.getContainingType.scalaTypeName}.scalaDescriptor.enums(${enum.getIndex})"
+    def scalaDescriptorSource: String = if (`enum`.isTopLevel)
+      s"${`enum`.getFile.fileDescriptorObjectName}.scalaDescriptor.enums(${`enum`.getIndex})"
+    else s"${`enum`.getContainingType.scalaTypeName}.scalaDescriptor.enums(${`enum`.getIndex})"
   }
 
   implicit class EnumValueDescriptorPimp(val enumValue: EnumValueDescriptor) {

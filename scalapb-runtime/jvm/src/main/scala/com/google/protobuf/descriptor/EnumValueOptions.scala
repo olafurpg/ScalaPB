@@ -8,10 +8,10 @@ package com.google.protobuf.descriptor
 import scala.collection.JavaConverters._
 
 /** @param deprecated
-  *   Is this enum value deprecated?
+  *   Is this `enum` value deprecated?
   *   Depending on the target platform, this can emit Deprecated annotations
-  *   for the enum value, or it will be completely ignored; in the very least,
-  *   this is a formalization for deprecating enum values.
+  *   for the `enum` value, or it will be completely ignored; in the very least,
+  *   this is a formalization for deprecating `enum` values.
   * @param uninterpretedOption
   *   The parser stores options it doesn't recognize here. See above.
   */

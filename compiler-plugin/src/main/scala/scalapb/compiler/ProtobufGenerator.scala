@@ -1722,6 +1722,7 @@ object ProtobufGenerator {
           val sealedOneofs =
             if (params.sealedOneofs) getSealedOneofs(request)
             else Nil
+          pprint.log(sealedOneofs)
           val generator = new ProtobufGenerator(params, sealedOneofs)
           import generator.FileDescriptorPimp
           val filesByName: Map[String, FileDescriptor] =

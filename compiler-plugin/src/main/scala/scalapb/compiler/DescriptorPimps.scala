@@ -113,6 +113,9 @@ trait DescriptorPimps {
 
     def isInOneof: Boolean = containingOneOf.isDefined
 
+    def isSealedOneof: Boolean =
+      fd.isMessage && sealedOneofs.exists(_.name.getFullName == fd.getMessageType.getFullName)
+
     def scalaName: String =
       if (fieldOptions.getScalaName.nonEmpty) fieldOptions.getScalaName
       else
@@ -157,7 +160,7 @@ trait DescriptorPimps {
     // Is this field boxed inside an Option in Scala. Equivalent, does the Java API
     // support hasX methods for this field.
     def supportsPresence: Boolean =
-      fd.isOptional && !fd.isInOneof && (!fd.getFile.isProto3 || fd.isMessage) && !fieldOptions.getNoBox
+      fd.isOptional && !fd.isInOneof && !fd.isSealedOneof && (!fd.getFile.isProto3 || fd.isMessage) && !fieldOptions.getNoBox
 
     // Is the Scala representation of this field a singular type.
     def isSingular =

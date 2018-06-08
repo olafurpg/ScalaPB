@@ -12,6 +12,8 @@ import scala.collection.immutable.IndexedSeq
 trait DescriptorPimps {
   def params: GeneratorParams
 
+  def sealedOneofs: Seq[SealedOneof] = Nil
+
   val SCALA_RESERVED_WORDS = Set(
     "abstract",
     "case",

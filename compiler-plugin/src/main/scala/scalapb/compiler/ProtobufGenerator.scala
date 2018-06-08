@@ -13,13 +13,20 @@ case class GeneratorParams(
     flatPackage: Boolean = false,
     grpc: Boolean = false,
     singleLineToProtoString: Boolean = false,
-    asciiFormatToString: Boolean = false
+    asciiFormatToString: Boolean = false,
+    sealedOneofs: Boolean = false
 )
+
+case class SealedOneof(name: Descriptor, children: Seq[Descriptor])
 
 // Exceptions that are caught and passed upstreams as errors.
 case class GeneratorException(message: String) extends Exception(message)
 
-class ProtobufGenerator(val params: GeneratorParams) extends DescriptorPimps {
+class ProtobufGenerator(
+    val params: GeneratorParams,
+    override val sealedOneofs: Seq[SealedOneof]
+) extends DescriptorPimps {
+  def this(params: GeneratorParams) = this(params, Nil)
   def printEnum(printer: FunctionalPrinter, e: EnumDescriptor): FunctionalPrinter = {
     val name = e.nameSymbol
     printer
@@ -1680,9 +1687,31 @@ object ProtobufGenerator {
           Right(params.copy(singleLineToProtoString = true))
         case (Right(params), "ascii_format_to_string") =>
           Right(params.copy(asciiFormatToString = true))
+        case (Right(params), "sealed_oneof") =>
+          Right(params.copy(sealedOneofs = true))
+        case (Right(params), "no_sealed_oneof") =>
+          Right(params.copy(sealedOneofs = false))
         case (Right(params), p) => Left(s"Unrecognized parameter: '$p'")
         case (x, _)             => x
       }
+  }
+
+  def getSealedOneofs(request: CodeGeneratorRequest): Seq[SealedOneof] = {
+    for {
+      protofile <- request.getProtoFileList.asScala
+      message <- FileDescriptor
+        .buildFrom(protofile, Array.empty)
+        .getMessageTypes
+        .asScala
+      if message.getOneofs.size() == 1
+      oneof <- message.getOneofs.asScala
+      hasSingleOneofField = message.getFields.size() == oneof.getFields.size()
+      if hasSingleOneofField
+      fields                           = oneof.getFields.asScala
+      allFieldsAreDefinedInTheSameFile = fields.forall(_.getFile == oneof.getFile)
+      if allFieldsAreDefinedInTheSameFile
+      children = fields.map(_.getMessageType)
+    } yield SealedOneof(message, children)
   }
 
   def handleCodeGeneratorRequest(request: CodeGeneratorRequest): CodeGeneratorResponse = {
@@ -1690,7 +1719,10 @@ object ProtobufGenerator {
     parseParameters(request.getParameter) match {
       case Right(params) =>
         try {
-          val generator = new ProtobufGenerator(params)
+          val sealedOneofs =
+            if (params.sealedOneofs) getSealedOneofs(request)
+            else Nil
+          val generator = new ProtobufGenerator(params, sealedOneofs)
           import generator.FileDescriptorPimp
           val filesByName: Map[String, FileDescriptor] =
             request.getProtoFileList.asScala.foldLeft[Map[String, FileDescriptor]](Map.empty) {

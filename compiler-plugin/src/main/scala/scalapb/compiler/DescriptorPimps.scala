@@ -116,6 +116,9 @@ trait DescriptorPimps {
     def isSealedOneof: Boolean =
       fd.isMessage && sealedOneofs.exists(_.name.getFullName == fd.getMessageType.getFullName)
 
+    def isSealedOneofChild: Boolean =
+      fd.isMessage && sealedOneofs.exists(_.children.exists(_.getFullName == fd.getMessageType.getFullName))
+
     def scalaName: String =
       if (fieldOptions.getScalaName.nonEmpty) fieldOptions.getScalaName
       else
@@ -346,6 +349,10 @@ trait DescriptorPimps {
   }
 
   implicit class MessageDescriptorPimp(val message: Descriptor) {
+
+    def isSealedOneof: Boolean =
+      sealedOneofs.exists(_.name.getFullName == message.getFullName)
+
     def fields = message.getFields.asScala.filter(_.getLiteType != FieldType.GROUP)
 
     def fieldsWithoutOneofs = fields.filterNot(_.isInOneof)

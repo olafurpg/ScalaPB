@@ -56,6 +56,27 @@ class Compiler {
 
 class ProtobufGeneratorSuite extends FunSuite {
   val compiler = new Compiler
+  val message =
+    """
+      |syntax = "proto3";
+      |
+      |package math;
+      |
+      |message Lit {
+      |  int32 value = 1;
+      |}
+      |message Add {
+      |  Expr lhs = 1;
+      |  Expr rhs = 2;
+      |}
+      |message Expr {
+      |  oneof value {
+      |    Lit lit = 1;
+      |    Add add = 2;
+      |  }
+      |}
+    """.stripMargin
+
   test("basic") {
     val request = CodeGeneratorRequest
       .parseFrom(Files.readAllBytes(Paths.get("target/semanticdb")))

@@ -345,7 +345,6 @@ class ProtobufGenerator(
       }
 
   def generateGetField(message: Descriptor)(fp: FunctionalPrinter) = {
-    message.getNestedTypes
     val signature = "def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = "
     if (message.fields.nonEmpty)
       fp.add(signature + "{")
@@ -1421,6 +1420,31 @@ class ProtobufGenerator(
   }
 
   def printMessage(printer: FunctionalPrinter, message: Descriptor) = {
+    if (message.isSealedOneof) printSealedOneof(printer, message)
+    else printNormalMessage(printer, message)
+  }
+
+  def printSealedOneof(printer: FunctionalPrinter, message: Descriptor) = {
+    printer
+      .add(s"sealed trait ${message.nameSymbol} {")
+      .indent
+      .add(s"final def isEmpty = this == ${message.nameSymbol}.Empty")
+      .add(s"final def isDefined = !isEmpty")
+      .outdent
+      .add("}")
+      .add(s"object ${message.nameSymbol} {")
+      .indent
+      .add(
+        s"case object Empty " +
+          s"extends ${message.nameSymbol} " +
+          s"with _root_.scalapb.GeneratedMessage " +
+          s"with _root_.scalapb.Message[${message.nameSymbol}]"
+      )
+      .outdent
+      .add("}")
+  }
+
+  def printNormalMessage(printer: FunctionalPrinter, message: Descriptor) = {
     printer
       .call(generateScalaDoc(message))
       .add(s"@SerialVersionUID(0L)")

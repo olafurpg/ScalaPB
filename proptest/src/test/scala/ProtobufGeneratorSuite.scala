@@ -41,7 +41,8 @@ class Compiler {
       response.getFileList.asScala.find(_.getName == msg.pos.source.file.name).foreach { file =>
         file.getContent.lines.zipWithIndex.foreach {
           case (line, i) =>
-            println(s"${i + 1}: $line")
+            val prefix = s"${i + 1}:"
+            println(f"$prefix%4s $line")
         }
       }
       println(s"${msg.pos.source.file.name}:${msg.pos.line}:${msg.pos.column} error: ${msg.msg}")

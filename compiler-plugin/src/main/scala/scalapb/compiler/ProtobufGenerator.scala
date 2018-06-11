@@ -345,6 +345,7 @@ class ProtobufGenerator(
       }
 
   def generateGetField(message: Descriptor)(fp: FunctionalPrinter) = {
+    message.getNestedTypes
     val signature = "def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = "
     if (message.fields.nonEmpty)
       fp.add(signature + "{")
@@ -505,6 +506,13 @@ class ProtobufGenerator(
         "  }",
         "};"
       )
+//    } else if (field.isSealedOneof) {
+//      fp.add(
+//        s"if ($fieldNameSymbol.isDefined) {",
+//        s"  val __value = ${toBaseType(field)(fieldNameSymbol + ".get")}",
+//        s"  __size += ${sizeExpressionForSingleField(field, "__value")}",
+//        s"};"
+//      )
     } else if (field.isOptional) {
       fp.add(
         s"if ($fieldNameSymbol.isDefined) {",

@@ -779,9 +779,13 @@ class ProtobufGenerator(
                   toBaseFieldType(field).apply(expr, field.enclosingType)
                 if (field.isInOneof || field.supportsPresence)
                   (mappedType + s".getOrElse($defInstance)")
+                else if (field.isSealedOneof) mappedType + field.asSealedOneofMessage
                 else mappedType
               }
-            s"_root_.scalapb.LiteParser.readMessage(_input__, $baseInstance)"
+            val suffix =
+              if (field.isSealedOneof) ".underlying"
+              else ""
+            s"_root_.scalapb.LiteParser.readMessage(_input__, $baseInstance)" + suffix
           } else if (field.isEnum)
             s"${field.getEnumType.scalaTypeNameWithMaybeRoot(message)}.fromValue(_input__.readEnum())"
           else s"_input__.read${Types.capitalizedType(field.getType)}()"
@@ -1451,10 +1455,10 @@ class ProtobufGenerator(
       )
       .add(
         s"abstract class Message(" +
-          s"underlying: $nameSymbol with _root_.scalapb.GeneratedMessage with _root_.scalapb.Message[$nameSymbol]," +
+          s"val underlying: $nameSymbol with _root_.scalapb.GeneratedMessage with _root_.scalapb.Message[$nameSymbol]," +
           s"tag: Int" +
           s") extends _root_.scalapb.GeneratedMessage " +
-          s"with _root_.scalapb.Message[$nameSymbol]"
+          s"with _root_.scalapb.Message[$nameSymbol.Message]"
       )
       .outdent
       .add("}")

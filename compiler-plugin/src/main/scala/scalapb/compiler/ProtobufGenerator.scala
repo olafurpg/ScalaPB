@@ -664,7 +664,7 @@ class ProtobufGenerator(
         .add("}")
         .outdent
         .add("};")
-    } else if (field.isSealedOneof) {
+    } else if (!field.isRepeated && field.isSealedOneof) {
       printer
         .add(s"if (${fieldNameSymbol}.isDefined) { ")
         .indent
@@ -673,10 +673,13 @@ class ProtobufGenerator(
         .outdent
         .add("};")
     } else {
+      val suffix =
+        if (field.isSealedOneof) field.asSealedOneofMessage
+        else ""
       printer
         .add(s"${fieldNameSymbol}.foreach { __v =>")
         .indent
-        .add(s"val __m = ${toBaseType(field)("__v")}")
+        .add(s"val __m = ${toBaseType(field)("__v" + suffix)}")
         .call(generateWriteSingleValue(field, "__m"))
         .outdent
         .add("};")
@@ -773,8 +776,11 @@ class ProtobufGenerator(
       .print(message.fields) { (printer, field) =>
         val p = {
           val newValBase = if (field.isMessage) {
+            val messageSuffix =
+              if (field.isSealedOneof) ".Message"
+              else ""
             val defInstance =
-              s"${field.getMessageType.scalaTypeNameWithMaybeRoot(message)}.defaultInstance"
+              s"${field.getMessageType.scalaTypeNameWithMaybeRoot(message)}${messageSuffix}.defaultInstance"
             val baseInstance =
               if (field.isRepeated) defInstance
               else {

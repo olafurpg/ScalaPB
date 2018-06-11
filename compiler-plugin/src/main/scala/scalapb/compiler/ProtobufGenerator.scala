@@ -1492,15 +1492,11 @@ class ProtobufGenerator(
       .add("}")
       .add(
         s"case object Empty " +
-          s"extends $nameSymbol " +
-          s"with _root_.scalapb.EmptyMessage[$nameSymbol] {"
+          s"extends $nameSymbol {"
       )
       .indent
-      .add(
-        "override def defaultInstance: T = this",
-        "override def javaDescriptor: com.google.protobuf.Descriptors.Descriptor = ???",
-        "override def scalaDescriptor: Descriptor = ???"
-      )
+      .add(s"override def asExprMessage = new $nameSymbol.Message(null, 0)")
+      .call(generateDescriptors(message))
       .outdent
       .add("}")
       .add(

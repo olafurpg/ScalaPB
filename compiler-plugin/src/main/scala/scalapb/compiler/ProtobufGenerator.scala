@@ -524,9 +524,12 @@ class ProtobufGenerator(
         Types.fixedSize(field.getType) match {
           case Some(size) => fp.add(s"__size += ${size + tagSize} * $fieldNameSymbol.size")
           case None =>
+            val suffix =
+              if (field.isSealedOneof) field.asSealedOneofMessage
+              else ""
             fp.add(
               s"$fieldNameSymbol.foreach { __item =>",
-              s"  val __value = ${toBaseType(field)("__item")}",
+              s"  val __value = ${toBaseType(field)("__item" + suffix)}",
               s"  __size += ${sizeExpressionForSingleField(field, "__value")}",
               s"}"
             )
@@ -704,6 +707,7 @@ class ProtobufGenerator(
           else if (field.isSingular && !field.isRequired) " = " + defaultValueForGet(field)
           else if (field.isMapField) " = scala.collection.immutable.Map.empty"
           else if (field.isRepeated) s" = ${field.collectionType}.empty"
+          else if (field.isSealedOneof) s" = ${field.scalaTypeName}.Empty"
           else ""
         s"${annotations(field)}${field.scalaName.asSymbol}: $typeName$ctorDefaultValue"
     }
@@ -1196,7 +1200,10 @@ class ProtobufGenerator(
         .indent
         .print(messageNumbers) {
           case (fp, (f, number)) =>
-            fp.add(s"case $number => __out = ${f.scalaTypeName}")
+            val rhs =
+              if (f.isSealedOneof) s"${f.scalaTypeName}.Message"
+              else f.scalaTypeName
+            fp.add(s"case $number => __out = $rhs")
         }
         .outdent
         .add("}")
@@ -1453,7 +1460,12 @@ class ProtobufGenerator(
       .add(s"def defaultInstance: $nameSymbol = Empty")
       .add(s"implicit def messageReads: _root_.scalapb.descriptors.Reads[$nameSymbol] = {")
       .indent
-      .add(s"_root_.scalapb.descriptors.Reads(_root_.scala.Predef.implicitly[_root_.scalapb.descriptors.Reads[$nameSymbol]].andThen(_.underlying))")
+      .add(
+        s"_root_.scalapb.descriptors.Reads(" +
+          s"_root_.scala.Predef.implicitly[_root_.scalapb.descriptors.Reads[$nameSymbol.Message]]" +
+          s".read.andThen(_.underlying)" +
+          s")"
+      )
       .outdent
       .add("}")
       .add(
@@ -1469,6 +1481,9 @@ class ProtobufGenerator(
           s") extends _root_.scalapb.GeneratedMessage " +
           s"with _root_.scalapb.Message[$nameSymbol.Message]"
       )
+      .add(s"object Message extends _root_.scalapb.GeneratedMessageCompanion[$nameSymbol.Message] {")
+      .add(s"implicit def messageReads: _root_.scalapb.descriptors.Reads[$nameSymbol.Message] = ???")
+      .add("}")
       .outdent
       .add("}")
   }

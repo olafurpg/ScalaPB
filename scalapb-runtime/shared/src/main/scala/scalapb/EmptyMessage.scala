@@ -7,7 +7,7 @@ import scalapb.descriptors.FieldDescriptor
 import scalapb.descriptors.PValue
 import scalapb.descriptors.Reads
 
-trait EmptyMessage[T] extends GeneratedMessage with Message[T] with GeneratedMessageCompanion [T] {
+trait EmptyMessage[T <: GeneratedMessage with Message[T]] extends GeneratedMessage with Message[T] with GeneratedMessageCompanion [T] {
 //  override def defaultInstance: T = ???
 //  override def javaDescriptor: com.google.protobuf.Descriptors.Descriptor = ???
 //  override def scalaDescriptor: Descriptor = ???
@@ -28,7 +28,7 @@ trait EmptyMessage[T] extends GeneratedMessage with Message[T] with GeneratedMes
     }
     defaultInstance
   }
-  override def fromFieldsMap(fields: Map[Any, Any]): T = defaultInstance
+  override def fromFieldsMap(fields: Map[com.google.protobuf.Descriptors.FieldDescriptor, Any]): T = defaultInstance
   override def nestedMessagesCompanions: Seq[GeneratedMessageCompanion[_]] = Nil
   override def messageReads: Reads[T] = Reads(_ => defaultInstance)
   override def messageCompanionForFieldNumber(field: Int): GeneratedMessageCompanion[_] = throw new MatchError(field)

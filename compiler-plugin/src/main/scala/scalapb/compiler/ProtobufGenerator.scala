@@ -1493,28 +1493,13 @@ class ProtobufGenerator(
       .add(
         s"case object Empty " +
           s"extends $nameSymbol " +
-          s"with _root_.scalapb.GeneratedMessage " +
-          s"with _root_.scalapb.GeneratedMessageCompanion[$nameSymbol] " +
-          s"with _root_.scalapb.Message[$nameSymbol] {"
+          s"with _root_.scalapb.EmptyMessage[$nameSymbol] {"
       )
       .indent
-      .add(s"def asExprMessage = new $nameSymbol.Message(this, 0)")
-      .add("def companion = this")
       .add(
-        "def getField(field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = " +
-          "throw new _root_.scala.MatchError(field)"
-      )
-      .add(
-        "def getFieldByNumber(fieldNumber: Int): _root_.scala.Any = " +
-          "throw new _root_.scala.MatchError(fieldNumber)"
-      )
-      .add("def serializedSize: Int = 0 ")
-      .add("""def toProtoString: String = """"")
-      .add(
-        "def writeTo(output: _root_.com.google.protobuf.CodedOutputStream): Unit = ()",
-        "def defaultInstance = this",
-        "def enumCompanionForFieldNumber(field: Int): _root_.scalapb.GeneratedEnumCompanion = this",
-
+        "override def defaultInstance: T = this",
+        "override def javaDescriptor: com.google.protobuf.Descriptors.Descriptor = ???",
+        "override def scalaDescriptor: Descriptor = ???"
       )
       .outdent
       .add("}")

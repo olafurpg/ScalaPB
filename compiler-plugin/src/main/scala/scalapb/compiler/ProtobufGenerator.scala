@@ -413,10 +413,18 @@ class ProtobufGenerator(
               .apply(accessor, enclosingType = f.enclosingType)
             if (f.supportsPresence || f.isInOneof) {
               fp.add(s"case ${f.getNumber} => $e.getOrElse(_root_.scalapb.descriptors.PEmpty)")
+            } else if (f.isSealedOneof) {
+              if (f.isRepeated){
+                fp.add(
+                  s"case ${f.getNumber} => " +
+                    s"_root_.scalapb.descriptors.PRepeated(" +
+                    s"$accessor.map(_${f.asSealedOneofMessage}.toPMessage)(_root_.scala.collection.breakOut))"
+                )
+              } else {
+                fp.add(s"case ${f.getNumber} => $accessor${f.asSealedOneofMessage}.toPMessage")
+              }
             } else if (f.isRepeated) {
               fp.add(s"case ${f.getNumber} => _root_.scalapb.descriptors.PRepeated($e)")
-            } else if (f.isSealedOneof) {
-              fp.add(s"case ${f.getNumber} => $accessor${f.asSealedOneofMessage}.toPMessage")
             } else {
               fp.add(s"case ${f.getNumber} => $e")
             }

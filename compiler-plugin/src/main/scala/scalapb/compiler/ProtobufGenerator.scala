@@ -1491,8 +1491,18 @@ class ProtobufGenerator(
         s"case object Empty " +
           s"extends $nameSymbol " +
           s"with _root_.scalapb.GeneratedMessage " +
-          s"with _root_.scalapb.Message[$nameSymbol]"
+          s"with _root_.scalapb.GeneratedMessageCompanion[$nameSymbol] " +
+          s"with _root_.scalapb.Message[$nameSymbol] {"
       )
+      .indent
+      .add(s"def asExprMessage = new $nameSymbol.Message(this, 0)")
+      .add("def companion = this")
+      .add(
+        "def getField(field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = " +
+          "throw new _root_.scala.MatchError(field)"
+      )
+      .outdent
+      .add("}")
       .add(
         s"abstract class Message(" +
           s"val underlying: $nameSymbol with _root_.scalapb.GeneratedMessage with _root_.scalapb.Message[$nameSymbol]," +

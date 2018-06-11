@@ -680,7 +680,7 @@ trait DescriptorPimps {
         inner(NameUtils.snakeCaseToCamelCase(baseName(file.getName) + "Proto", upperInitial = true))
     }
 
-    def fileDescriptorObjectFullName =
+    def fileDescriptorObjectFullName: String =
       (scalaPackagePartsAsSymbols :+ fileDescriptorObjectName).mkString(".")
 
     def isProto2 = file.getSyntax == FileDescriptor.Syntax.PROTO2

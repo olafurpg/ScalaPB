@@ -1261,7 +1261,12 @@ class ProtobufGenerator(
     else
       fp.add(signature + "Seq(")
         .indent
-        .addWithDelimiter(",")(file.getMessageTypes.asScala.map(_.scalaTypeName))
+        .addWithDelimiter(",")(file.getMessageTypes.asScala.map { messageType =>
+          val suffix =
+            if (messageType.isSealedOneof) ".Message"
+            else ""
+          messageType.scalaTypeName + suffix
+        })
         .outdent
         .add(")")
   }

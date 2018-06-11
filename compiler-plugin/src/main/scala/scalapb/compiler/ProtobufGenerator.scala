@@ -1501,12 +1501,15 @@ class ProtobufGenerator(
       .add("}")
       .add(
         s"final class Message(" +
-          s"val underlying: $nameSymbol with _root_.scalapb.GeneratedMessage with _root_.scalapb.Message[$nameSymbol]," +
+          s"msg: $nameSymbol," +
           s"tag: Int" +
-          s") extends _root_.scalapb.GeneratedMessage " +
-          s"with _root_.scalapb.Message[$nameSymbol.Message] {"
+          s") extends _root_.scalapb.GeneratedSealedOneofMessage(msg, tag) {"
       )
       .indent
+      //  override def companion: GeneratedMessageCompanion[_] = ???
+      //  override def mergeFrom(input: CodedInputStream): T = ???
+      .add(s"def companion = $nameSymbol.Message")
+      .add(s"def mergeFrom(__input: _root_.com.google.protobuf.CodedOutputStream): Message = ???")
       .add()
       .outdent
       .add("}")

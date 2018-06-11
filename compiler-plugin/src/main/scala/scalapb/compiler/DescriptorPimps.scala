@@ -119,6 +119,12 @@ trait DescriptorPimps {
     def isSealedOneofChild: Boolean =
       fd.isMessage && sealedOneofs.exists(_.children.exists(_.getFullName == fd.getMessageType.getFullName))
 
+    def asSealedOneofMessage: String = {
+      require(isSealedOneof)
+      s".as${fd.getMessageType.nameSymbol}Message"
+    }
+
+
     def scalaName: String =
       if (fieldOptions.getScalaName.nonEmpty) fieldOptions.getScalaName
       else

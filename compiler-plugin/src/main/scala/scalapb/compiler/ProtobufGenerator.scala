@@ -505,17 +505,13 @@ class ProtobufGenerator(
         "  }",
         "};"
       )
-//    } else if (field.isSealedOneof) {
-//      fp.add(
-//        s"if ($fieldNameSymbol.isDefined) {",
-//        s"  val __value = ${toBaseType(field)(fieldNameSymbol + ".get")}",
-//        s"  __size += ${sizeExpressionForSingleField(field, "__value")}",
-//        s"};"
-//      )
     } else if (field.isOptional) {
+      val getter =
+        if (field.isSealedOneof) field.asSealedOneofMessage
+        else ".get"
       fp.add(
         s"if ($fieldNameSymbol.isDefined) {",
-        s"  val __value = ${toBaseType(field)(fieldNameSymbol + ".get")}",
+        s"  val __value = ${toBaseType(field)(fieldNameSymbol + getter)}",
         s"  __size += ${sizeExpressionForSingleField(field, "__value")}",
         s"};"
       )
@@ -618,64 +614,75 @@ class ProtobufGenerator(
     if (funcs.length == 1) funcs(0)
     else s"(${funcs(0)} _)" + funcs.tail.map(func => s".compose($func)").mkString
 
+  def generateWriteToForField(printer: FunctionalPrinter, field: FieldDescriptor): FunctionalPrinter = {
+    val fieldNameSymbol = fieldAccessorSymbol(field)
+    val capTypeName     = Types.capitalizedType(field.getType)
+    if (field.isPacked) {
+      val writeFunc = composeGen(
+        Seq(s"_output__.write${capTypeName}NoTag") ++ (
+          if (field.isEnum) Seq(s"(_: ${field.baseSingleScalaTypeName}).value") else Nil
+          ) ++ (
+          if (field.customSingleScalaTypeName.isDefined)
+            Seq(s"${field.typeMapper}.toBase")
+          else Nil
+          )
+      )
+
+      printer.addStringMargin(
+        s"""if (${fieldNameSymbol}.nonEmpty) {
+           |  _output__.writeTag(${field.getNumber}, 2)
+           |  _output__.writeUInt32NoTag(${field.scalaName}SerializedSize)
+           |  ${fieldNameSymbol}.foreach($writeFunc)
+           |};"""
+      )
+    } else if (field.isRequired) {
+      printer
+        .add("")
+        .add("{")
+        .indent
+        .add(s"val __v = ${toBaseType(field)(fieldNameSymbol)}")
+        .call(generateWriteSingleValue(field, "__v"))
+        .outdent
+        .add("};")
+    } else if (field.isSingular) {
+      // Singular that are not required are written only if they don't equal their default
+      // value.
+      printer
+        .add(s"{")
+        .indent
+        .add(s"val __v = ${toBaseType(field)(fieldNameSymbol)}")
+        .add(s"if (__v != ${defaultValueForGet(field, uncustomized = true)}) {")
+        .indent
+        .call(generateWriteSingleValue(field, "__v"))
+        .outdent
+        .add("}")
+        .outdent
+        .add("};")
+    } else if (field.isSealedOneof) {
+      printer
+        .add(s"if (${fieldNameSymbol}.isDefined) { ")
+        .indent
+        .add(s"val __m = ${fieldNameSymbol}${field.asSealedOneofMessage}")
+        .call(generateWriteSingleValue(field, "__m"))
+        .outdent
+        .add("};")
+    } else {
+      printer
+        .add(s"${fieldNameSymbol}.foreach { __v =>")
+        .indent
+        .add(s"val __m = ${toBaseType(field)("__v")}")
+        .call(generateWriteSingleValue(field, "__m"))
+        .outdent
+        .add("};")
+    }
+  }
+
   def generateWriteTo(message: Descriptor)(fp: FunctionalPrinter) =
     fp.add(
         s"def writeTo(`_output__`: _root_.com.google.protobuf.CodedOutputStream): _root_.scala.Unit = {"
       )
       .indent
-      .print(message.fields.sortBy(_.getNumber).zipWithIndex) {
-        case (printer, (field, index)) =>
-          val fieldNameSymbol = fieldAccessorSymbol(field)
-          val capTypeName     = Types.capitalizedType(field.getType)
-          if (field.isPacked) {
-            val writeFunc = composeGen(
-              Seq(s"_output__.write${capTypeName}NoTag") ++ (
-                if (field.isEnum) Seq(s"(_: ${field.baseSingleScalaTypeName}).value") else Nil
-              ) ++ (
-                if (field.customSingleScalaTypeName.isDefined)
-                  Seq(s"${field.typeMapper}.toBase")
-                else Nil
-              )
-            )
-
-            printer.addStringMargin(s"""if (${fieldNameSymbol}.nonEmpty) {
-            |  _output__.writeTag(${field.getNumber}, 2)
-            |  _output__.writeUInt32NoTag(${field.scalaName}SerializedSize)
-            |  ${fieldNameSymbol}.foreach($writeFunc)
-            |};""")
-          } else if (field.isRequired) {
-            printer
-              .add("")
-              .add("{")
-              .indent
-              .add(s"val __v = ${toBaseType(field)(fieldNameSymbol)}")
-              .call(generateWriteSingleValue(field, "__v"))
-              .outdent
-              .add("};")
-          } else if (field.isSingular) {
-            // Singular that are not required are written only if they don't equal their default
-            // value.
-            printer
-              .add(s"{")
-              .indent
-              .add(s"val __v = ${toBaseType(field)(fieldNameSymbol)}")
-              .add(s"if (__v != ${defaultValueForGet(field, uncustomized = true)}) {")
-              .indent
-              .call(generateWriteSingleValue(field, "__v"))
-              .outdent
-              .add("}")
-              .outdent
-              .add("};")
-          } else {
-            printer
-              .add(s"${fieldNameSymbol}.foreach { __v =>")
-              .indent
-              .add(s"val __m = ${toBaseType(field)("__v")}")
-              .call(generateWriteSingleValue(field, "__m"))
-              .outdent
-              .add("};")
-          }
-      }
+      .print(message.fields.sortBy(_.getNumber))(generateWriteToForField)
       .when(message.preservesUnknownFields)(_.add("unknownFields.writeTo(_output__)"))
       .outdent
       .add("}")
@@ -1425,20 +1432,29 @@ class ProtobufGenerator(
   }
 
   def printSealedOneof(printer: FunctionalPrinter, message: Descriptor) = {
+    val nameSymbol = message.nameSymbol
     printer
-      .add(s"sealed trait ${message.nameSymbol} {")
+      .add(s"sealed trait $nameSymbol {")
       .indent
-      .add(s"final def isEmpty = this == ${message.nameSymbol}.Empty")
+      .add(s"def as${nameSymbol}Message: $nameSymbol.Message")
+      .add(s"final def isEmpty = this == $nameSymbol.Empty")
       .add(s"final def isDefined = !isEmpty")
       .outdent
       .add("}")
-      .add(s"object ${message.nameSymbol} {")
+      .add(s"object $nameSymbol {")
       .indent
       .add(
         s"case object Empty " +
-          s"extends ${message.nameSymbol} " +
+          s"extends $nameSymbol " +
           s"with _root_.scalapb.GeneratedMessage " +
-          s"with _root_.scalapb.Message[${message.nameSymbol}]"
+          s"with _root_.scalapb.Message[$nameSymbol]"
+      )
+      .add(
+        s"abstract class Message(" +
+          s"underlying: $nameSymbol with _root_.scalapb.GeneratedMessage with _root_.scalapb.Message[$nameSymbol]," +
+          s"tag: Int" +
+          s") extends _root_.scalapb.GeneratedMessage " +
+          s"with _root_.scalapb.Message[$nameSymbol]"
       )
       .outdent
       .add("}")

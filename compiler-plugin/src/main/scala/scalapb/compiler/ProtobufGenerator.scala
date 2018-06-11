@@ -407,13 +407,16 @@ class ProtobufGenerator(
         .indent
         .print(message.fields) {
           case (fp, f) =>
+            val accessor = fieldAccessorSymbol(f)
             val e = toBaseFieldTypeWithScalaDescriptors(f)
               .andThen(singleFieldAsPvalue(f))
-              .apply(fieldAccessorSymbol(f), enclosingType = f.enclosingType)
+              .apply(accessor, enclosingType = f.enclosingType)
             if (f.supportsPresence || f.isInOneof) {
               fp.add(s"case ${f.getNumber} => $e.getOrElse(_root_.scalapb.descriptors.PEmpty)")
             } else if (f.isRepeated) {
               fp.add(s"case ${f.getNumber} => _root_.scalapb.descriptors.PRepeated($e)")
+            } else if (f.isSealedOneof) {
+              fp.add(s"case ${f.getNumber} => $accessor${f.asSealedOneofMessage}.toPMessage")
             } else {
               fp.add(s"case ${f.getNumber} => $e")
             }
@@ -1447,6 +1450,12 @@ class ProtobufGenerator(
       .add("}")
       .add(s"object $nameSymbol {")
       .indent
+      .add(s"def defaultInstance: $nameSymbol = Empty")
+      .add(s"implicit def messageReads: _root_.scalapb.descriptors.Reads[$nameSymbol] = {")
+      .indent
+      .add(s"_root_.scalapb.descriptors.Reads(_root_.scala.Predef.implicitly[_root_.scalapb.descriptors.Reads[$nameSymbol]].andThen(_.underlying))")
+      .outdent
+      .add("}")
       .add(
         s"case object Empty " +
           s"extends $nameSymbol " +

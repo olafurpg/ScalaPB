@@ -1510,9 +1510,10 @@ class ProtobufGenerator(
     val messageName = s"$nameSymbol.Message"
     val emptyName = s"$nameSymbol.Empty"
     printer
-      .add(s"sealed trait $nameSymbol {")
+      // TODO: Make trait sealed
+      .add(s"trait $nameSymbol {")
       .indent
-      .add(s"def as${nameSymbol}Message: $messageName")
+      .add(s"final def as${nameSymbol}Message: $messageName = new $messageName(this)")
       .add(s"final def isEmpty = this == $emptyName")
       .add(s"final def isDefined = !isEmpty")
       .outdent
@@ -1532,7 +1533,6 @@ class ProtobufGenerator(
       .add("}")
       .add(s"case object Empty extends $nameSymbol {")
       .indent
-      .add(s"override def asExprMessage = new $messageName(this)")
       .call(generateDescriptors(message))
       .outdent
       .add("}")

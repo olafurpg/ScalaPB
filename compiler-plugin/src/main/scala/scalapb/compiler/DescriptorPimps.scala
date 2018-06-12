@@ -361,6 +361,12 @@ trait DescriptorPimps {
     def isSealedOneof: Boolean =
       sealedOneofs.exists(_.name.getFullName == message.getFullName)
 
+    def sealedOneofCaseParent: Option[Descriptor] =
+      sealedOneofs.collectFirst {
+        case o if o.children.exists(child => child.getFullName == message.getFullName) =>
+          o.name
+      }
+
     def fields = message.getFields.asScala.filter(_.getLiteType != FieldType.GROUP)
 
     def fieldsWithoutOneofs = fields.filterNot(_.isInOneof)
@@ -440,7 +446,13 @@ trait DescriptorPimps {
 
       val anyVal = if (isValueClass) Seq("AnyVal") else Nil
 
-      anyVal ++ Seq(
+      val sealedOneof =
+        message.sealedOneofCaseParent match {
+          case Some(parent) => Seq(parent.scalaTypeName)
+          case _ => Nil
+        }
+
+      anyVal ++ sealedOneof ++ Seq(
         "scalapb.GeneratedMessage",
         s"scalapb.Message[$nameSymbol]",
         s"scalapb.lenses.Updatable[$nameSymbol]"

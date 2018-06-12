@@ -809,7 +809,7 @@ class ProtobufGenerator(
                 else mappedType
               }
             val suffix =
-              if (field.isSealedOneof) ".underlying"
+              if (field.isSealedOneof) ".value"
               else ""
             s"_root_.scalapb.LiteParser.readMessage(_input__, $baseInstance)" + suffix
           } else if (field.isEnum)
@@ -945,7 +945,12 @@ class ProtobufGenerator(
            FunctionApplication(field.getEnumType.scalaTypeName + ".fromValue"))) andThen
         toCustomTypeExpr(field)
 
-    val myFullScalaName = message.scalaTypeName
+    val myFullScalaName =
+      if (message.isSealedOneof) message.scalaTypeName + ".Message"
+      else message.scalaTypeName
+    val constructor =
+      if (message.isSealedOneof) "new " + myFullScalaName
+      else myFullScalaName
     printer
       .add(
         s"def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, _root_.scala.Any]): $myFullScalaName = {"
@@ -957,7 +962,7 @@ class ProtobufGenerator(
       .when(message.fields.nonEmpty)(
         _.add("val __fields = javaDescriptor.getFields")
       )
-      .add(myFullScalaName + "(")
+      .add(constructor + "(")
       .indent
       .call { printer =>
         val fields = message.fields.collect {
@@ -983,7 +988,7 @@ class ProtobufGenerator(
 
             transform(field).apply(e, enclosingType = field.enclosingType)
         }
-        val oneOfs = message.getOneofs.asScala.map { oneOf =>
+        val oneOfs = message.getOneofs.asScala.collect { case oneOf if !oneOf.isSealedOneof=>
           val elems = oneOf.fields.map { field =>
             val typeName =
               if (field.isEnum) "_root_.com.google.protobuf.Descriptors.EnumValueDescriptor"
@@ -999,7 +1004,21 @@ class ProtobufGenerator(
             elems.reduceLeft((acc, field) => s"$acc\n    .orElse[${oneOf.scalaTypeName}]($field)")
           s"${oneOf.scalaName.asSymbol} = $expr\n    .getOrElse(${oneOf.empty})"
         }
-        printer.addWithDelimiter(",")(fields ++ oneOfs)
+        val sealedOneofs = message.getOneofs.asScala.collect {
+          case oneOf if oneOf.isSealedOneof =>
+            val scalaTypeName = oneOf.getContainingType.scalaTypeName
+            val empty = oneOf.getContainingType.scalaTypeName + ".Empty"
+            val elems = oneOf.fields.map { field =>
+              val typeName = field.baseSingleScalaTypeName
+              val e =
+                s"__fieldsMap.get(__fields.get(${field.getIndex})).asInstanceOf[_root_.scala.Option[$typeName]]"
+              e
+            }
+            val expr =
+              elems.reduceLeft((acc, field) => s"$acc\n    .orElse[$scalaTypeName]($field)")
+            s"${oneOf.scalaName.asSymbol} = $expr\n    .getOrElse($empty)"
+        }
+        printer.addWithDelimiter(",")(fields ++ oneOfs ++ sealedOneofs)
       }
       .outdent
       .add(")")
@@ -1506,7 +1525,7 @@ class ProtobufGenerator(
       .add(
         s"_root_.scalapb.descriptors.Reads(" +
           s"_root_.scala.Predef.implicitly[_root_.scalapb.descriptors.Reads[$messageName]]" +
-          s".read.andThen(_.underlying)" +
+          s".read.andThen(_.value)" +
           s")"
       )
       .outdent
@@ -1518,7 +1537,7 @@ class ProtobufGenerator(
       .outdent
       .add("}")
       .add(
-        s"final class Message(val underlying: $nameSymbol) " +
+        s"final class Message(val value: $nameSymbol) " +
           s"extends _root_.scalapb.GeneratedMessage with _root_.scalapb.Message[$messageName] {"
       )
       .indent

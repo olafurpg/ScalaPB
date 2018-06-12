@@ -327,6 +327,8 @@ trait DescriptorPimps {
 
   implicit class OneofDescriptorPimp(val oneof: OneofDescriptor) {
 
+    def isSealedOneof: Boolean = oneof.getContainingType.isSealedOneof
+
     def javaEnumName = {
       val name = NameUtils.snakeCaseToCamelCase(oneof.getName, true)
       s"get${name}Case"

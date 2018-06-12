@@ -1,7 +1,9 @@
 package scalapb.compiler
 
+import com.google.protobuf.CodedInputStream
 import com.google.protobuf.Descriptors._
 import com.google.protobuf.CodedOutputStream
+import com.google.protobuf.Descriptors
 import com.google.protobuf.Descriptors.FieldDescriptor.Type
 import com.google.protobuf.{ByteString => GoogleByteString}
 import com.google.protobuf.compiler.PluginProtos.{CodeGeneratorRequest, CodeGeneratorResponse}
@@ -1467,58 +1469,82 @@ class ProtobufGenerator(
     else printNormalMessage(printer, message)
   }
 
+  def tpe[T](implicit ev: reflect.ClassTag[T]): String = {
+    val name =
+      if (ev.runtimeClass.isPrimitive) {
+        ev.runtimeClass.getName match {
+          case "int" => "scala.Int"
+          case "double" => "scala.Double"
+          case "void" => "scala.Unit"
+        }
+      } else if (ev == reflect.classTag[Any]) {
+        "scala.Any"
+      } else {
+        ev.runtimeClass.getName.replace('$', '.')
+      }
+    "_root_." + name
+  }
+  def d(tpe: String): String = "_root_.scalapb.descriptors." + tpe
+
   def printSealedOneof(printer: FunctionalPrinter, message: Descriptor) = {
     val nameSymbol = message.nameSymbol
+    val messageName = s"$nameSymbol.Message"
+    val emptyName = s"$nameSymbol.Empty"
     printer
       .add(s"sealed trait $nameSymbol {")
       .indent
-      .add(s"def as${nameSymbol}Message: $nameSymbol.Message")
-      .add(s"final def isEmpty = this == $nameSymbol.Empty")
+      .add(s"def as${nameSymbol}Message: $messageName")
+      .add(s"final def isEmpty = this == $emptyName")
       .add(s"final def isDefined = !isEmpty")
       .outdent
       .add("}")
       .add(s"object $nameSymbol {")
       .indent
-      .add(s"def defaultInstance: $nameSymbol = Empty")
+      .add(s"def defaultInstance: $nameSymbol = $emptyName")
       .add(s"implicit def messageReads: _root_.scalapb.descriptors.Reads[$nameSymbol] = {")
       .indent
       .add(
         s"_root_.scalapb.descriptors.Reads(" +
-          s"_root_.scala.Predef.implicitly[_root_.scalapb.descriptors.Reads[$nameSymbol.Message]]" +
+          s"_root_.scala.Predef.implicitly[_root_.scalapb.descriptors.Reads[$messageName]]" +
           s".read.andThen(_.underlying)" +
           s")"
       )
       .outdent
       .add("}")
-      .add(
-        s"case object Empty " +
-          s"extends $nameSymbol {"
-      )
+      .add(s"case object Empty extends $nameSymbol {")
       .indent
-      .add(s"override def asExprMessage = new $nameSymbol.Message(null, 0)")
+      .add(s"override def asExprMessage = new $messageName(this)")
       .call(generateDescriptors(message))
       .outdent
       .add("}")
       .add(
-        s"final class Message(" +
-          s"msg: $nameSymbol," +
-          s"tag: Int" +
-          s") extends _root_.scalapb.GeneratedSealedOneofMessage(msg, tag) {"
+        s"final class Message(val underlying: $nameSymbol) " +
+          s"extends _root_.scalapb.GeneratedMessage with _root_.scalapb.Message[$messageName] {"
       )
       .indent
-      //  override def companion: GeneratedMessageCompanion[_] = ???
-      //  override def mergeFrom(input: CodedInputStream): T = ???
-      .add(s"def companion = $nameSymbol.Message")
-      .add(s"def mergeFrom(__input: _root_.com.google.protobuf.CodedOutputStream): Message = ???")
+      .add(s"override def companion = $messageName")
+      .add(s"override def mergeFrom(__input: ${tpe[CodedInputStream]}): $messageName = ???")
+      .add(s"override def getField(field: ${d("FieldDescriptor")}): ${d("PValue")} = ???")
+      .add(s"override def getFieldByNumber(fieldNumber: ${tpe[Int]}): ${tpe[Any]} = ???")
+      .add(s"override def serializedSize: ${tpe[Int]} = ???")
+      .add(s"override def toProtoString: ${tpe[String]} = ???")
+      .add(s"override def writeTo(output: ${tpe[CodedOutputStream]}): ${tpe[Unit]} = ???")
       .add()
       .outdent
       .add("}")
       .add(
-        s"object Message extends _root_.scalapb.GeneratedMessageCompanion[$nameSymbol.Message] {"
+        s"object Message extends _root_.scalapb.GeneratedMessageCompanion[$messageName] {"
       )
-      .add(
-        s"implicit def messageReads: _root_.scalapb.descriptors.Reads[$nameSymbol.Message] = ???"
-      )
+      .indent
+      .add(s"def defaultInstance: $messageName = new $messageName($emptyName)")
+      .add(s"implicit def messageReads: _root_.scalapb.descriptors.Reads[$messageName] = ???")
+//      .add(s"def fromFieldsMap(fields: ${tpe[Map[_, _]]}[${tpe[Descriptors.FieldDescriptor]}, ${tpe[Any]}]): $messageName = ???")
+      .call(generateFromFieldsMap(message))
+      .call(generateDescriptors(message))
+      .call(generateEnumCompanionForField(message))
+      .call(generateMessageCompanionForField(message))
+      .call(generateNestedMessagesCompanions(message))
+      .outdent
       .add("}")
       .outdent
       .add("}")
